@@ -7,4 +7,5 @@ Both a CLI and library are provided with this package.
 
 ## LICENSE
 This library is licensed under either MIT or Apache 2.0
+
 See [LICENSE-MIT](LICENSE-MIT) and [LICENSE-APACHE](LICENSE-APACHE) for details.

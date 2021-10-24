@@ -294,7 +294,7 @@ impl CCAPI {
         self.base_url = Self::generate_base_url(&console_socket);
     }
 
-    /// Rings the conosle buzzer with the specified [BuzzerType](crate::BuzzerType)
+    /// Rings the console buzzer with the specified [BuzzerType](crate::BuzzerType)
     ///
     /// ### Arguments
     ///

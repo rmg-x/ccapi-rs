@@ -1,4 +1,6 @@
 ## CCAPI-RS
+![Latest Version](https://img.shields.io/crates/v/ccapi.svg)
+
 A simple library made in Rust to interact with the ControlConsole API for the PlayStation 3.
 
 Both a CLI and library are provided with this package.

@@ -18,6 +18,6 @@ name = "ccapi"
 path = "src/cli/main.rs"
 
 [dependencies]
-ureq = "2.2.0"
+ureq = "2.4.0"
 anyhow = "1.0"
 getopts = "0.2"

@@ -45,7 +45,24 @@ pub fn run(ccapi: &CCAPI, matches: &Matches) -> Result<()> {
             let temperature_info = ccapi.get_temperature_info()?;
             println!("{temperature_info:?}");
         },
-        _ => bail!("Command '{}' not recognized", cmd),
+        "process" => match first_free {
+            Some(action) => match action.as_ref() {
+                "list" => {
+                    let process_list = ccapi.get_process_list()?;
+                    println!("{process_list:?}");
+                },
+                "name" => match second_free {
+                    Some(raw_pid) => {
+                        let pid: u32 = raw_pid.parse()?;
+                        println!("{}", &ccapi.get_process_name(pid)?);
+                    },
+                    _ => bail!("A valid process id must be specified")
+                }
+                _ => bail!("Invalid action '{action}' specified for processes")
+            }
+            _ => bail!("A valid action for processes must be specified")
+        }
+        _ => bail!("Command '{cmd}' not recognized"),
     }
 
     Ok(())

@@ -491,4 +491,51 @@ impl CCAPI {
             _ => bail!("Could not retrieve temperature information"),
         }
     }
+
+    /// Returns a list of process identifiers (pid)
+    pub fn get_process_list(&self) -> Result<Vec<u32>> {
+        let req_command = "getprocesslist";
+        let req_url = format!("{}{}", self.base_url, req_command);
+
+        let response = ureq::get(&req_url)
+            .call()
+            .with_context(|| format!("Failed to send command `{}`", req_command))?;
+
+        let body = response.into_string()?;
+
+        let lines: Vec<&str> = body.split('\n').collect::<Vec<_>>();
+        let mut process_ids = Vec::new();
+
+        // Skip first line which contains the "status" code
+        for raw_pid in &lines[1..] {
+            if let Ok(actual_pid) = u32::from_str(raw_pid) {
+                process_ids.push(actual_pid);
+            }
+        }
+
+        Ok(process_ids)
+    }
+
+    /// Returns a process name from its identifier (pid)
+    pub fn get_process_name(&self, pid: u32) -> Result<String> {
+        let req_command = "getprocessname";
+        let req_query = format!("{}?pid={}", req_command, &pid);
+        let req_url = format!("{}{}", self.base_url, req_query);
+
+        let response = ureq::get(&req_url)
+            .call()
+            .with_context(|| format!("Failed to send command '{req_command}'"))?;
+
+        let body = response.into_string()?;
+
+        let lines: Vec<&str> = body.split('\n').collect::<Vec<_>>();
+
+        let raw_status_code = lines.get(0);
+        let raw_process_name = lines.get(1);
+
+        match (raw_status_code, raw_process_name) {
+            (Some(&"0"), Some(process_name)) => Ok(process_name.to_string()),
+            _ => bail!("Could not retrieve process name for pid '{pid}'"),
+        }
+    }
 }

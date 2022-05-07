@@ -4,6 +4,7 @@ use std::str::FromStr;
 use ureq::Error;
 
 const DEFAULT_CCAPI_PORT: u16 = 6333;
+const DEFAULT_RADIX: u32 = 16;
 
 pub struct CCAPI {
     base_url: String,
@@ -196,19 +197,25 @@ impl ConsoleType {
 impl From<i32> for ConsoleType {
     fn from(value: i32) -> Self {
         match value {
-            value if value == 1 => ConsoleType::CEX,
-            value if value == 2 => ConsoleType::DEX,
-            value if value == 3 => ConsoleType::TOOL,
+            1 => ConsoleType::CEX,
+            2 => ConsoleType::DEX,
+            3 => ConsoleType::TOOL,
             _ => ConsoleType::Unknown,
         }
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, )]
 pub struct FirmwareInfo {
     pub firmware_version: u32,
     pub ccapi_version: u32,
     pub console_type: ConsoleType,
+}
+
+#[derive(Debug)]
+pub struct TemperatureInfo {
+    pub cell: i32,
+    pub rsx: i32,
 }
 
 impl CCAPI {
@@ -450,6 +457,38 @@ impl CCAPI {
                 Ok(firmware_info)
             }
             _ => bail!("Could not retrieve firmware information"),
+        }
+    }
+
+    /// Returns temperature information in celsius
+    pub fn get_temperature_info(&self) -> Result<TemperatureInfo> {
+        let req_command = "gettemperature";
+        let req_url = format!("{}{}", self.base_url, req_command);
+
+        let response = ureq::get(&req_url)
+            .call()
+            .with_context(|| format!("Failed to send command `{}`", req_command))?;
+
+        let body = response.into_string()?;
+
+        let lines: Vec<&str> = body.split('\n').collect::<Vec<_>>();
+
+        let raw_cell_temp = lines.get(1);
+        let raw_rsx_temp = lines.get(2);
+
+        match (raw_cell_temp, raw_rsx_temp) {
+            (Some(ct), Some(rt)) => {
+                let cell_temp = i32::from_str_radix(ct, DEFAULT_RADIX)?;
+                let rsx_temp = i32::from_str_radix(rt, DEFAULT_RADIX)?;
+
+                let temp_info = TemperatureInfo {
+                    cell: cell_temp,
+                    rsx: rsx_temp,
+                };
+
+                Ok(temp_info)
+            }
+            _ => bail!("Could not retrieve temperature information"),
         }
     }
 }

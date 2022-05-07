@@ -40,7 +40,7 @@ impl FromStr for BuzzerType {
             "double" => Ok(BuzzerType::Double),
             "triple" => Ok(BuzzerType::Triple),
             "continuous" => Ok(BuzzerType::Continuous),
-            _ => bail!("Invalid buzzer type `{}` provided", &s),
+            _ => bail!("Invalid buzzer type '{}' provided", &s),
         }
     }
 }
@@ -138,7 +138,7 @@ impl FromStr for NotifyIcon {
             "trophy2" => Ok(NotifyIcon::Trophy2),
             "trophy3" => Ok(NotifyIcon::Trophy3),
             "trophy4" => Ok(NotifyIcon::Trophy4),
-            _ => bail!("Invalid notify icon `{}` provided", &s),
+            _ => bail!("Invalid notify icon '{}' provided", &s),
         }
     }
 }
@@ -326,7 +326,7 @@ impl CCAPI {
 
         ureq::get(&req_url).call().with_context(|| {
             format!(
-                "Failed to send command `{}`, with buzzer type: {:?}",
+                "Failed to send command '{}', with buzzer type: {:?}",
                 req_command, buzzer_type
             )
         })?;
@@ -395,7 +395,7 @@ impl CCAPI {
 
         ureq::get(&req_url).call().with_context(|| {
             format!(
-                "Failed to send command `{}`, with icon: {:?}, message: {}",
+                "Failed to send command '{}', with icon: {:?}, message: {}",
                 req_command, notify_icon, &message
             )
         })?;
@@ -417,7 +417,7 @@ impl CCAPI {
 
         ureq::get(&req_url).call().with_context(|| {
             format!(
-                "Failed to send command `{}` with LED color: {:?}, LED status: {:?}",
+                "Failed to send command '{}' with LED color: {:?}, LED status: {:?}",
                 req_command, color, status
             )
         })?;
@@ -432,7 +432,7 @@ impl CCAPI {
 
         let response = ureq::get(&req_url)
             .call()
-            .with_context(|| format!("Failed to send command `{}`", req_command))?;
+            .with_context(|| format!("Failed to send command '{}'", req_command))?;
 
         let body = response.into_string()?;
 
@@ -467,7 +467,7 @@ impl CCAPI {
 
         let response = ureq::get(&req_url)
             .call()
-            .with_context(|| format!("Failed to send command `{}`", req_command))?;
+            .with_context(|| format!("Failed to send command '{}'", req_command))?;
 
         let body = response.into_string()?;
 
@@ -499,7 +499,7 @@ impl CCAPI {
 
         let response = ureq::get(&req_url)
             .call()
-            .with_context(|| format!("Failed to send command `{}`", req_command))?;
+            .with_context(|| format!("Failed to send command '{}'", req_command))?;
 
         let body = response.into_string()?;
 

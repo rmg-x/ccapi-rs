@@ -24,7 +24,7 @@ pub fn run(ccapi: &CCAPI, matches: &Matches) -> Result<()> {
                 let shutdown_mode = match raw_restart_mode.as_ref() {
                     "soft" => ShutdownMode::SoftReboot,
                     "hard" => ShutdownMode::HardReboot,
-                    _ => bail!("Invalid restart mode `{}` provided", raw_restart_mode),
+                    _ => bail!("Invalid restart mode '{}' provided", raw_restart_mode),
                 };
                 ccapi.shutdown(shutdown_mode)?;
             }

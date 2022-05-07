@@ -445,7 +445,7 @@ impl CCAPI {
         match (raw_firmware_version, raw_ccapi_version, raw_console_type) {
             (Some(fv), Some(cv), Some(ct)) => {
                 let firmware_version: u32 = fv.parse()?;
-                let ccapi_version: u32 = cv.parse()?;
+                let ccapi_version = u32::from_str_radix(cv, DEFAULT_RADIX)?;
                 let console_type_parsed: i32 = ct.parse()?;
 
                 let firmware_info = FirmwareInfo {

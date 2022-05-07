@@ -1,11 +1,11 @@
 [package]
 name = "ccapi"
 description = "A simple library to interact with the ControlConsole API for the PlayStation 3"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2018"
 license = "MIT OR Apache-2.0"
-homepage = "https://github.com/xRMG412/ccapi-rs"
-repository = "https://github.com/xRMG412/ccapi-rs"
+homepage = "https://github.com/rmg-x/ccapi-rs"
+repository = "https://github.com/rmg-x/ccapi-rs"
 readme = "README.md"
 rust-version="1.43.1"
 

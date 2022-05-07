@@ -36,8 +36,16 @@ pub fn run(ccapi: &CCAPI, matches: &Matches) -> Result<()> {
                 ccapi.notify(notify_icon, &raw_message)?;
             },
             _ => bail!("A valid icon and message must be provided")
-        }
-        _ => bail!("Command `{}` not recognized", cmd),
+        },
+        "firmware" => {
+            let firmware_info = ccapi.get_firmware_info()?;
+            println!("{firmware_info:?}");
+        },
+        "temperature" | "temp" => {
+            let temperature_info = ccapi.get_temperature_info()?;
+            println!("{temperature_info:?}");
+        },
+        _ => bail!("Command '{}' not recognized", cmd),
     }
 
     Ok(())

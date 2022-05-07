@@ -205,7 +205,7 @@ impl From<i32> for ConsoleType {
     }
 }
 
-#[derive(Debug, )]
+#[derive(Debug)]
 pub struct FirmwareInfo {
     pub firmware_version: u32,
     pub ccapi_version: u32,

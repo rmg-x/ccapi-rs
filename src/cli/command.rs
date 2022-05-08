@@ -54,10 +54,11 @@ pub fn run(ccapi: &CCAPI, matches: &Matches) -> Result<()> {
                 "name" => match second_free {
                     Some(raw_pid) => {
                         let pid: u32 = raw_pid.parse()?;
-                        println!("{}", &ccapi.get_process_name(pid)?);
+                        println!("{}", &ccapi.get_process_name(&pid)?);
                     },
                     _ => bail!("A valid process id must be specified")
-                }
+                },
+                "map" => println!("{:?}", &ccapi.get_process_map()?),
                 _ => bail!("Invalid action '{action}' specified for processes")
             }
             _ => bail!("A valid action for processes must be specified")

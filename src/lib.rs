@@ -1,4 +1,5 @@
 use anyhow::{bail, Context, Result};
+use std::collections::HashMap;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::str::FromStr;
 use ureq::Error;
@@ -497,7 +498,7 @@ impl CCAPI {
     }
 
     /// Returns a process name from its identifier (pid)
-    pub fn get_process_name(&self, pid: u32) -> Result<String> {
+    pub fn get_process_name(&self, pid: &u32) -> Result<String> {
         let request_url = self.build_command_url("getprocessname");
 
         let response = ureq::get(&request_url)
@@ -514,5 +515,18 @@ impl CCAPI {
             (Some(&"0"), Some(process_name)) => Ok(process_name.to_string()),
             _ => bail!("Could not retrieve process name for pid '{pid}'"),
         }
+    }
+
+    /// Returns a map of process ids and their names
+    pub fn get_process_map(&self) -> Result<HashMap<u32, String>> {
+        let pids = self.get_process_list()?;
+        let mut process_map = HashMap::new();
+
+        for pid in pids {
+            let process_name = self.get_process_name(&pid)?;
+            process_map.insert(pid, process_name);
+        }
+
+        Ok(process_map)
     }
 }

@@ -430,9 +430,7 @@ impl CCAPI {
         let req_command = "getfirmwareinfo";
         let req_url = format!("{}{}", self.base_url, req_command);
 
-        let response = ureq::get(&req_url)
-            .call()
-            .with_context(|| format!("Failed to send command '{}'", req_command))?;
+        let response = ureq::get(&req_url).call()?;
 
         let body = response.into_string()?;
 
@@ -465,9 +463,7 @@ impl CCAPI {
         let req_command = "gettemperature";
         let req_url = format!("{}{}", self.base_url, req_command);
 
-        let response = ureq::get(&req_url)
-            .call()
-            .with_context(|| format!("Failed to send command '{}'", req_command))?;
+        let response = ureq::get(&req_url).call()?;
 
         let body = response.into_string()?;
 
@@ -497,9 +493,7 @@ impl CCAPI {
         let req_command = "getprocesslist";
         let req_url = format!("{}{}", self.base_url, req_command);
 
-        let response = ureq::get(&req_url)
-            .call()
-            .with_context(|| format!("Failed to send command '{}'", req_command))?;
+        let response = ureq::get(&req_url).call()?;
 
         let body = response.into_string()?;
 
@@ -522,9 +516,7 @@ impl CCAPI {
         let req_query = format!("{}?pid={}", req_command, &pid);
         let req_url = format!("{}{}", self.base_url, req_query);
 
-        let response = ureq::get(&req_url)
-            .call()
-            .with_context(|| format!("Failed to send command '{req_command}'"))?;
+        let response = ureq::get(&req_url).call()?;
 
         let body = response.into_string()?;
 

@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use anyhow::{bail, Result};
-use ccapi::{BuzzerType, CCAPI, NotifyIcon, ShutdownMode};
+use ccapi::{BuzzerType, NotifyIcon, ShutdownMode, CCAPI};
 use getopts::Matches;
 
 pub fn run(ccapi: &CCAPI, matches: &Matches) -> Result<()> {
@@ -34,35 +34,35 @@ pub fn run(ccapi: &CCAPI, matches: &Matches) -> Result<()> {
             (Some(raw_notify_icon), Some(raw_message)) => {
                 let notify_icon = NotifyIcon::from_str(raw_notify_icon)?;
                 ccapi.notify(notify_icon, &raw_message)?;
-            },
-            _ => bail!("A valid icon and message must be provided")
+            }
+            _ => bail!("A valid icon and message must be provided"),
         },
         "firmware" => {
             let firmware_info = ccapi.get_firmware_info()?;
             println!("{firmware_info:?}");
-        },
+        }
         "temperature" | "temp" => {
             let temperature_info = ccapi.get_temperature_info()?;
             println!("{temperature_info:?}");
-        },
+        }
         "process" => match first_free {
             Some(action) => match action.as_ref() {
                 "list" => {
                     let process_list = ccapi.get_process_list()?;
                     println!("{process_list:?}");
-                },
+                }
                 "name" => match second_free {
                     Some(raw_pid) => {
                         let pid: u32 = raw_pid.parse()?;
                         println!("{}", &ccapi.get_process_name(&pid)?);
-                    },
-                    _ => bail!("A valid process id must be specified")
+                    }
+                    _ => bail!("A valid process id must be specified"),
                 },
                 "map" => println!("{:?}", &ccapi.get_process_map()?),
-                _ => bail!("Invalid action '{action}' specified for processes")
-            }
-            _ => bail!("A valid action for processes must be specified")
-        }
+                _ => bail!("Invalid action '{action}' specified for processes"),
+            },
+            _ => bail!("A valid action for processes must be specified"),
+        },
         _ => bail!("Command '{cmd}' not recognized"),
     }
 

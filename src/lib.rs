@@ -508,8 +508,8 @@ impl CCAPI {
 
         // Skip first line which contains the "status" code
         for raw_pid in &lines[1..] {
-            if let Ok(actual_pid) = u32::from_str(raw_pid) {
-                process_ids.push(actual_pid);
+            if let Ok(pid) = u32::from_str(raw_pid) {
+                process_ids.push(pid);
             }
         }
 

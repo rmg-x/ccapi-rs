@@ -223,6 +223,10 @@ impl CCAPI {
         format!("http://{}/ccapi/", socket_addr)
     }
 
+    fn build_command_url(&self, command: &str) -> String {
+        format!("{}{}", self.base_url, command)
+    }
+
     /// Returns a new instance of CCAPI
     ///
     /// ### Arguments
@@ -320,16 +324,12 @@ impl CCAPI {
     pub fn ring_buzzer(&self, buzzer_type: BuzzerType) -> Result<()> {
         let buzzer_code = buzzer_type.get_value();
 
-        let req_command = "ringbuzzer";
-        let req_query = format!("{}?type={}", req_command, buzzer_code);
-        let req_url = format!("{}{}", self.base_url, req_query);
+        let request_url = self.build_command_url("ringbuzzer");
 
-        ureq::get(&req_url).call().with_context(|| {
-            format!(
-                "Failed to send command '{}', with buzzer type: {:?}",
-                req_command, buzzer_type
-            )
-        })?;
+        ureq::get(&request_url)
+            .query("type", &buzzer_code.to_string())
+            .call()
+            .with_context(|| format!("Buzzer type: {:?}", buzzer_type))?;
 
         Ok(())
     }
@@ -353,11 +353,11 @@ impl CCAPI {
     pub fn shutdown(&self, shutdown_mode: ShutdownMode) -> Result<()> {
         let shutdown_code = shutdown_mode.get_value();
 
-        let req_command = "shutdown";
-        let req_query = format!("{}?mode={}", req_command, shutdown_code);
-        let req_url = format!("{}{}", self.base_url, req_query);
+        let request_url = self.build_command_url("shutdown");
 
-        let response = ureq::get(&req_url).call();
+        let response = ureq::get(&request_url)
+            .query("mode", &shutdown_code.to_string())
+            .call();
 
         // After making the shutdown call, a transport
         // error occurs even though the shutdown is successful.
@@ -389,16 +389,13 @@ impl CCAPI {
     pub fn notify(&self, notify_icon: NotifyIcon, message: &str) -> Result<()> {
         let notify_code = notify_icon.get_value();
 
-        let req_command = "notify";
-        let req_query = format!("{}?id={}&msg={}", req_command, notify_code, message);
-        let req_url = format!("{}{}", self.base_url, req_query);
+        let request_url = self.build_command_url("notify");
 
-        ureq::get(&req_url).call().with_context(|| {
-            format!(
-                "Failed to send command '{}', with icon: {:?}, message: {}",
-                req_command, notify_icon, &message
-            )
-        })?;
+        ureq::get(&request_url)
+            .query("id", &notify_code.to_string())
+            .query("msg", message)
+            .call()
+            .with_context(|| format!("Icon: {notify_icon:?}, message: {message}"))?;
 
         Ok(())
     }
@@ -408,32 +405,24 @@ impl CCAPI {
         let led_color_code = color.get_value();
         let led_status_code = status.get_value();
 
-        let req_command = "setconsoleled";
-        let req_query = format!(
-            "{}?color={}&status={}",
-            req_command, led_color_code, led_status_code
-        );
-        let req_url = format!("{}{}", self.base_url, req_query);
+        let request_url = self.build_command_url("setconsoleled");
 
-        ureq::get(&req_url).call().with_context(|| {
-            format!(
-                "Failed to send command '{}' with LED color: {:?}, LED status: {:?}",
-                req_command, color, status
-            )
-        })?;
+        ureq::get(&request_url)
+            .query("color", &led_color_code.to_string())
+            .query("status", &led_status_code.to_string())
+            .call()
+            .with_context(|| format!("LED color: {color:?}, LED status: {status:?}"))?;
 
         Ok(())
     }
 
     /// Returns console firmware information
     pub fn get_firmware_info(&self) -> Result<FirmwareInfo> {
-        let req_command = "getfirmwareinfo";
-        let req_url = format!("{}{}", self.base_url, req_command);
+        let request_url = self.build_command_url("getfirmwareinfo");
 
-        let response = ureq::get(&req_url).call()?;
+        let response = ureq::get(&request_url).call()?;
 
         let body = response.into_string()?;
-
         let lines: Vec<&str> = body.split('\n').collect::<Vec<_>>();
 
         let raw_firmware_version = lines.get(1);
@@ -460,13 +449,11 @@ impl CCAPI {
 
     /// Returns temperature information in celsius
     pub fn get_temperature_info(&self) -> Result<TemperatureInfo> {
-        let req_command = "gettemperature";
-        let req_url = format!("{}{}", self.base_url, req_command);
+        let request_url = self.build_command_url("gettemperature");
 
-        let response = ureq::get(&req_url).call()?;
+        let response = ureq::get(&request_url).call()?;
 
         let body = response.into_string()?;
-
         let lines: Vec<&str> = body.split('\n').collect::<Vec<_>>();
 
         let raw_cell_temp = lines.get(1);
@@ -490,14 +477,13 @@ impl CCAPI {
 
     /// Returns a list of process identifiers (pid)
     pub fn get_process_list(&self) -> Result<Vec<u32>> {
-        let req_command = "getprocesslist";
-        let req_url = format!("{}{}", self.base_url, req_command);
+        let request_url = self.build_command_url("getprocesslist");
 
-        let response = ureq::get(&req_url).call()?;
+        let response = ureq::get(&request_url).call()?;
 
         let body = response.into_string()?;
-
         let lines: Vec<&str> = body.split('\n').collect::<Vec<_>>();
+
         let mut process_ids = Vec::new();
 
         // Skip first line which contains the "status" code
@@ -512,14 +498,13 @@ impl CCAPI {
 
     /// Returns a process name from its identifier (pid)
     pub fn get_process_name(&self, pid: u32) -> Result<String> {
-        let req_command = "getprocessname";
-        let req_query = format!("{}?pid={}", req_command, &pid);
-        let req_url = format!("{}{}", self.base_url, req_query);
+        let request_url = self.build_command_url("getprocessname");
 
-        let response = ureq::get(&req_url).call()?;
+        let response = ureq::get(&request_url)
+            .query("pid", &pid.to_string())
+            .call()?;
 
         let body = response.into_string()?;
-
         let lines: Vec<&str> = body.split('\n').collect::<Vec<_>>();
 
         let raw_status_code = lines.get(0);

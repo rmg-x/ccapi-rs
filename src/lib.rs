@@ -152,6 +152,18 @@ pub enum ConsoleLed {
     LedGreen,
 }
 
+impl FromStr for ConsoleLed {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "red" => Ok(ConsoleLed::LedRed),
+            "green" => Ok(ConsoleLed::LedGreen),
+            _ => bail!("Invalid LED color '{s}' provided"),
+        }
+    }
+}
+
 impl ConsoleLed {
     pub fn get_value(&self) -> i32 {
         match *self {

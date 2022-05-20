@@ -41,7 +41,7 @@ impl FromStr for BuzzerType {
             "double" => Ok(BuzzerType::Double),
             "triple" => Ok(BuzzerType::Triple),
             "continuous" => Ok(BuzzerType::Continuous),
-            _ => bail!("Invalid buzzer type '{}' provided", &s),
+            _ => bail!("Invalid buzzer type '{s}' provided"),
         }
     }
 }
@@ -139,7 +139,7 @@ impl FromStr for NotifyIcon {
             "trophy2" => Ok(NotifyIcon::Trophy2),
             "trophy3" => Ok(NotifyIcon::Trophy3),
             "trophy4" => Ok(NotifyIcon::Trophy4),
-            _ => bail!("Invalid notify icon '{}' provided", &s),
+            _ => bail!("Invalid notify icon '{s}' provided"),
         }
     }
 }

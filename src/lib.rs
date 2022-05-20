@@ -543,4 +543,19 @@ impl CCAPI {
 
         Ok(process_map)
     }
+
+    /// **!! NOT IMPLEMENTED !!**
+    /// 
+    /// Read process memory from the given address
+    pub fn read_process_memory(&self, _pid: &u32, _address: &u64, _size: &u32) -> Result<Vec<u8>> {
+        // let request_url = self.build_command_url("getmemory");
+        // let address_hex = format!("{address:x}");
+
+        // let _response = ureq::get(&request_url)
+        //     .query("pid", &pid.to_string())
+        //     .query("addr", &address_hex)
+        //     .query("size", &size.to_string())
+        //     .call()?;
+        unimplemented!("read_process_memory is not implemented")
+    }
 }

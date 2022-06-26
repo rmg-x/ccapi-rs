@@ -277,18 +277,6 @@ impl CCAPI {
     /// ### Arguments
     ///
     /// * `console_ip` - The IPv4 address of the console to communicate with
-    ///
-    /// ### Examples
-    ///
-    /// ```
-    /// use ccapi::CCAPI;
-    /// use std::net::Ipv4Addr;
-    ///
-    /// let mut ccapi = CCAPI::new(Ipv4Addr::LOCALHOST);
-    ///
-    /// let new_ip: Ipv4Addr = "192.168.0.0".parse().unwrap();
-    /// ccapi.set_console_ip(new_ip);
-    /// ```
     pub fn set_console_ip(&mut self, console_ip: Ipv4Addr) {
         let ip_address = IpAddr::V4(console_ip);
         let console_socket = SocketAddr::new(ip_address, self.port);
@@ -302,18 +290,6 @@ impl CCAPI {
     /// ### Arguments
     ///
     /// * `port` - The port to communicate with
-    ///
-    /// ### Examples
-    ///
-    /// ```
-    /// use ccapi::CCAPI;
-    /// use std::net::Ipv4Addr;
-    ///
-    /// let mut ccapi = CCAPI::new(Ipv4Addr::LOCALHOST);
-    ///
-    /// let port: u16 = 6333;
-    /// ccapi.set_console_port(port);
-    /// ```
     pub fn set_console_port(&mut self, port: u16) {
         let console_socket = SocketAddr::new(self.ip_address, port);
 
@@ -325,17 +301,6 @@ impl CCAPI {
     /// ### Arguments
     ///
     /// * `buzzer_type` - The buzzer type to use
-    ///
-    /// ### Examples
-    ///
-    /// ```
-    /// use ccapi::{CCAPI, BuzzerType};
-    /// use std::net::Ipv4Addr;
-    ///
-    /// let ccapi = CCAPI::new(Ipv4Addr::LOCALHOST);
-    ///
-    /// ccapi.ring_buzzer(BuzzerType::Single);
-    /// ```
     pub fn ring_buzzer(&self, buzzer_type: BuzzerType) -> Result<()> {
         let buzzer_code = buzzer_type.get_value();
 
@@ -354,17 +319,6 @@ impl CCAPI {
     /// ### Arguments
     ///
     /// * `shutdown_mode` - The shutdown mode to use
-    ///
-    /// ### Examples
-    ///
-    /// ```
-    /// use ccapi::{CCAPI, ShutdownMode};
-    /// use std::net::Ipv4Addr;
-    ///
-    /// let ccapi = CCAPI::new(Ipv4Addr::LOCALHOST);
-    ///
-    /// ccapi.shutdown(ShutdownMode::Shutdown);
-    /// ```
     pub fn shutdown(&self, shutdown_mode: ShutdownMode) -> Result<()> {
         let shutdown_code = shutdown_mode.get_value();
 
@@ -390,17 +344,6 @@ impl CCAPI {
     ///
     /// * `notify_icon` - Icon to display
     /// * `message` - Message to display
-    ///
-    /// ### Examples
-    ///
-    /// ```
-    /// use ccapi::{CCAPI, NotifyIcon};
-    /// use std::net::Ipv4Addr;
-    ///
-    /// let ccapi = CCAPI::new(Ipv4Addr::LOCALHOST);
-    ///
-    /// ccapi.notify(NotifyIcon::NotifyInfo, "hello world");
-    /// ```
     pub fn notify(&self, notify_icon: NotifyIcon, message: &str) -> Result<()> {
         let notify_code = notify_icon.get_value();
 

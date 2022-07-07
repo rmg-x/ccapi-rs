@@ -1,18 +1,16 @@
 #![forbid(unsafe_code)]
 
-use anyhow::{bail, Context, Result};
+use anyhow::{anyhow, bail, Result};
 use std::collections::HashMap;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::str::FromStr;
-use ureq::Error;
 
+const CCAPI_OK: i32 = 0;
 const DEFAULT_CCAPI_PORT: u16 = 6333;
 const DEFAULT_RADIX: u32 = 16;
 
 pub struct CCAPI {
-    base_url: String,
-    ip_address: IpAddr,
-    port: u16,
+    console_socket: SocketAddr,
 }
 
 #[derive(Debug)]
@@ -233,15 +231,63 @@ pub struct TemperatureInfo {
     pub rsx: i32,
 }
 
+struct ConsoleRequest<'a> {
+    socket: &'a SocketAddr,
+    command: String,
+    parameters: HashMap<String, String>,
+    strict: bool,
+}
+
+struct ConsoleResponse {
+    lines: Vec<String>,
+}
+
+impl<'a> ConsoleRequest<'a> {
+    fn new(socket: &'a SocketAddr, command: &str) -> Self {
+        ConsoleRequest {
+            socket,
+            command: command.to_string(),
+            parameters: HashMap::new(),
+            strict: true,
+        }
+    }
+
+    fn param(mut self, name: &str, value: &str) -> Self {
+        self.parameters.insert(name.to_string(), value.to_string());
+        self
+    }
+
+    fn send(&self) -> Result<ConsoleResponse> {
+        let url = format!("http://{}/ccapi/{}", self.socket, self.command);
+        let mut request = ureq::get(&url);
+
+        for param in &self.parameters {
+            request = request.query(&param.0, &param.1);
+        }
+
+        let response = request.call()?;
+
+        let body = response.into_string()?;
+        let lines: Vec<String> = body.split('\n').map(String::from).collect();
+
+        if self.strict {
+            let raw_status_code = lines.get(0).ok_or(anyhow!("Could not read status code"))?;
+            let status_code: i32 = raw_status_code.parse()?;
+
+            if status_code != CCAPI_OK {
+                bail!(
+                    "Invalid status code '{}' received for command '{}'",
+                    status_code,
+                    self.command
+                )
+            }
+        }
+
+        Ok(ConsoleResponse { lines })
+    }
+}
+
 impl CCAPI {
-    fn generate_base_url(socket_addr: &SocketAddr) -> String {
-        format!("http://{}/ccapi/", socket_addr)
-    }
-
-    fn build_command_url(&self, command: &str) -> String {
-        format!("{}{}", self.base_url, command)
-    }
-
     /// Returns a new instance of CCAPI
     ///
     /// ### Arguments
@@ -259,41 +305,19 @@ impl CCAPI {
     /// let ccapi = CCAPI::new(ip);
     /// ```
     pub fn new(console_ip: Ipv4Addr) -> Self {
-        let ip_address = IpAddr::V4(console_ip);
-        let port = DEFAULT_CCAPI_PORT;
+        let console_socket = SocketAddr::new(IpAddr::V4(console_ip), DEFAULT_CCAPI_PORT);
 
-        let console_socket = SocketAddr::new(ip_address, port);
-        let base_url = Self::generate_base_url(&console_socket);
-
-        CCAPI {
-            base_url,
-            ip_address,
-            port,
-        }
+        CCAPI { console_socket }
     }
 
     /// Sets the IPv4 address of the console to communicate with
-    ///
-    /// ### Arguments
-    ///
-    /// * `console_ip` - The IPv4 address of the console to communicate with
     pub fn set_console_ip(&mut self, console_ip: Ipv4Addr) {
-        let ip_address = IpAddr::V4(console_ip);
-        let console_socket = SocketAddr::new(ip_address, self.port);
-
-        self.ip_address = ip_address;
-        self.base_url = Self::generate_base_url(&console_socket);
+        self.console_socket.set_ip(IpAddr::V4(console_ip));
     }
 
     /// Sets the port to communicate with
-    ///
-    /// ### Arguments
-    ///
-    /// * `port` - The port to communicate with
     pub fn set_console_port(&mut self, port: u16) {
-        let console_socket = SocketAddr::new(self.ip_address, port);
-
-        self.base_url = Self::generate_base_url(&console_socket);
+        self.console_socket.set_port(port);
     }
 
     /// Rings the console buzzer with the specified [BuzzerType](crate::BuzzerType)
@@ -304,16 +328,15 @@ impl CCAPI {
     pub fn ring_buzzer(&self, buzzer_type: BuzzerType) -> Result<()> {
         let buzzer_code = buzzer_type.get_value();
 
-        let request_url = self.build_command_url("ringbuzzer");
-
-        ureq::get(&request_url)
-            .query("type", &buzzer_code.to_string())
-            .call()
-            .with_context(|| format!("Buzzer type: {:?}", buzzer_type))?;
+        ConsoleRequest::new(&self.console_socket, "ringbuzzer")
+            .param("type", &buzzer_code.to_string())
+            .send()?;
 
         Ok(())
     }
 
+    /// **WARNING:** This function will return an error even if successful
+    /// 
     /// Shutdown/restart the console, depending on the [ShutdownMode](crate::ShutdownMode) given
     ///
     /// ### Arguments
@@ -322,20 +345,12 @@ impl CCAPI {
     pub fn shutdown(&self, shutdown_mode: ShutdownMode) -> Result<()> {
         let shutdown_code = shutdown_mode.get_value();
 
-        let request_url = self.build_command_url("shutdown");
+        // FIXME: Explicitly ignore transport error for shutdown call
+        let _ = ConsoleRequest::new(&self.console_socket, "shutdown")
+            .param("mode", &shutdown_code.to_string())
+            .send()?;
 
-        let response = ureq::get(&request_url)
-            .query("mode", &shutdown_code.to_string())
-            .call();
-
-        // After making the shutdown call, a transport
-        // error occurs even though the shutdown is successful.
-        // We're going to assume CCAPI is telling us
-        // the shutdown succeeded.
-        match response {
-            Ok(_) | Err(Error::Transport(_)) => Ok(()),
-            Err(e) => bail!("{}", e),
-        }
+        Ok(())
     }
 
     /// Displays a notification message with an icon
@@ -347,13 +362,10 @@ impl CCAPI {
     pub fn notify(&self, notify_icon: NotifyIcon, message: &str) -> Result<()> {
         let notify_code = notify_icon.get_value();
 
-        let request_url = self.build_command_url("notify");
-
-        ureq::get(&request_url)
-            .query("id", &notify_code.to_string())
-            .query("msg", message)
-            .call()
-            .with_context(|| format!("Icon: {notify_icon:?}, message: {message}"))?;
+        ConsoleRequest::new(&self.console_socket, "notify")
+            .param("id", &notify_code.to_string())
+            .param("msg", message)
+            .send()?;
 
         Ok(())
     }
@@ -363,29 +375,21 @@ impl CCAPI {
         let led_color_code = color.get_value();
         let led_status_code = status.get_value();
 
-        let request_url = self.build_command_url("setconsoleled");
-
-        ureq::get(&request_url)
-            .query("color", &led_color_code.to_string())
-            .query("status", &led_status_code.to_string())
-            .call()
-            .with_context(|| format!("LED color: {color:?}, LED status: {status:?}"))?;
+        ConsoleRequest::new(&self.console_socket, "setconsoleled")
+            .param("color", &led_color_code.to_string())
+            .param("status", &led_status_code.to_string())
+            .send()?;
 
         Ok(())
     }
 
     /// Returns console firmware information
     pub fn get_firmware_info(&self) -> Result<FirmwareInfo> {
-        let request_url = self.build_command_url("getfirmwareinfo");
+        let response = ConsoleRequest::new(&self.console_socket, "getfirmwareinfo").send()?;
 
-        let response = ureq::get(&request_url).call()?;
-
-        let body = response.into_string()?;
-        let lines: Vec<&str> = body.split('\n').collect::<Vec<_>>();
-
-        let raw_firmware_version = lines.get(1);
-        let raw_ccapi_version = lines.get(2);
-        let raw_console_type = lines.get(3);
+        let raw_firmware_version = response.lines.get(1);
+        let raw_ccapi_version = response.lines.get(2);
+        let raw_console_type = response.lines.get(3);
 
         match (raw_firmware_version, raw_ccapi_version, raw_console_type) {
             (Some(fv), Some(cv), Some(ct)) => {
@@ -407,15 +411,10 @@ impl CCAPI {
 
     /// Returns temperature information in celsius
     pub fn get_temperature_info(&self) -> Result<TemperatureInfo> {
-        let request_url = self.build_command_url("gettemperature");
+        let response = ConsoleRequest::new(&self.console_socket, "gettemperature").send()?;
 
-        let response = ureq::get(&request_url).call()?;
-
-        let body = response.into_string()?;
-        let lines: Vec<&str> = body.split('\n').collect::<Vec<_>>();
-
-        let raw_cell_temp = lines.get(1);
-        let raw_rsx_temp = lines.get(2);
+        let raw_cell_temp = response.lines.get(1);
+        let raw_rsx_temp = response.lines.get(2);
 
         match (raw_cell_temp, raw_rsx_temp) {
             (Some(ct), Some(rt)) => {
@@ -435,17 +434,12 @@ impl CCAPI {
 
     /// Returns a list of process identifiers (pid)
     pub fn get_process_list(&self) -> Result<Vec<u32>> {
-        let request_url = self.build_command_url("getprocesslist");
-
-        let response = ureq::get(&request_url).call()?;
-
-        let body = response.into_string()?;
-        let lines: Vec<&str> = body.split('\n').collect::<Vec<_>>();
+        let response = ConsoleRequest::new(&self.console_socket, "getprocesslist").send()?;
 
         let mut process_ids = Vec::new();
 
         // Skip first line which contains the "status" code
-        for raw_pid in &lines[1..] {
+        for raw_pid in &response.lines[1..] {
             if let Ok(pid) = u32::from_str(raw_pid) {
                 process_ids.push(pid);
             }
@@ -456,20 +450,14 @@ impl CCAPI {
 
     /// Returns a process name from its identifier (pid)
     pub fn get_process_name(&self, pid: &u32) -> Result<String> {
-        let request_url = self.build_command_url("getprocessname");
+        let response = ConsoleRequest::new(&self.console_socket, "getprocessname")
+            .param("pid", &pid.to_string())
+            .send()?;
 
-        let response = ureq::get(&request_url)
-            .query("pid", &pid.to_string())
-            .call()?;
+        let raw_process_name = response.lines.get(1);
 
-        let body = response.into_string()?;
-        let lines: Vec<&str> = body.split('\n').collect::<Vec<_>>();
-
-        let raw_status_code = lines.get(0);
-        let raw_process_name = lines.get(1);
-
-        match (raw_status_code, raw_process_name) {
-            (Some(&"0"), Some(process_name)) => Ok(process_name.to_string()),
+        match raw_process_name {
+            Some(process_name) => Ok(process_name.to_string()),
             _ => bail!("Could not retrieve process name for pid '{pid}'"),
         }
     }
@@ -488,7 +476,7 @@ impl CCAPI {
     }
 
     /// **!! NOT IMPLEMENTED !!**
-    /// 
+    ///
     /// Read process memory from the given address
     pub fn read_process_memory(&self, _pid: &u32, _address: &u64, _size: &u32) -> Result<Vec<u8>> {
         // let request_url = self.build_command_url("getmemory");

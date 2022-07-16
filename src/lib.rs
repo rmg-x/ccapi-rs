@@ -146,8 +146,8 @@ impl FromStr for NotifyIcon {
 
 #[derive(Debug)]
 pub enum ConsoleLed {
-    LedRed,
-    LedGreen,
+    Red,
+    Green,
 }
 
 impl FromStr for ConsoleLed {
@@ -155,8 +155,8 @@ impl FromStr for ConsoleLed {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "red" => Ok(ConsoleLed::LedRed),
-            "green" => Ok(ConsoleLed::LedGreen),
+            "red" => Ok(ConsoleLed::Red),
+            "green" => Ok(ConsoleLed::Green),
             _ => bail!("Invalid LED color '{s}' provided"),
         }
     }
@@ -165,25 +165,38 @@ impl FromStr for ConsoleLed {
 impl ConsoleLed {
     pub fn get_value(&self) -> i32 {
         match *self {
-            ConsoleLed::LedRed => 0,
-            ConsoleLed::LedGreen => 1,
+            ConsoleLed::Green => 1,
+            ConsoleLed::Red => 2,
         }
     }
 }
 
 #[derive(Debug)]
 pub enum LedStatus {
-    LedOff,
-    LedOn,
-    LedBlink,
+    Off,
+    On,
+    Blink,
+}
+
+impl FromStr for LedStatus {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "on" => Ok(LedStatus::On),
+            "off" => Ok(LedStatus::Off),
+            "blink" => Ok(LedStatus::Blink),
+            _ => bail!("Invalid LED status '{s}' provided")
+        }
+    }
 }
 
 impl LedStatus {
     pub fn get_value(&self) -> i32 {
         match *self {
-            LedStatus::LedOff => 0,
-            LedStatus::LedOn => 1,
-            LedStatus::LedBlink => 2,
+            LedStatus::Off => 0,
+            LedStatus::On => 1,
+            LedStatus::Blink => 2,
         }
     }
 }

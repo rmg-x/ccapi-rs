@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use anyhow::{bail, Result};
-use ccapi::{BuzzerType, NotifyIcon, ShutdownMode, CCAPI};
+use ccapi::{BuzzerType, NotifyIcon, ShutdownMode, CCAPI, ConsoleLed, LedStatus};
 use getopts::Matches;
 
 pub fn run(ccapi: &CCAPI, matches: &Matches) -> Result<()> {
@@ -62,6 +62,14 @@ pub fn run(ccapi: &CCAPI, matches: &Matches) -> Result<()> {
                 _ => bail!("Invalid action '{action}' specified for processes"),
             },
             _ => bail!("A valid action for processes must be specified"),
+        },
+        "led" => match (first_free, second_free) {
+            (Some(raw_led_color), Some(raw_led_status)) => {
+                let led_color = ConsoleLed::from_str(&raw_led_color)?;
+                let led_status = LedStatus::from_str(&raw_led_status)?;
+                ccapi.set_console_led(led_color, led_status)?;
+            }
+            _ => bail!("A valid icon and message must be provided"),
         },
         _ => bail!("Command '{cmd}' not recognized"),
     }

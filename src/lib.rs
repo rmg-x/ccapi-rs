@@ -1,11 +1,14 @@
 #![forbid(unsafe_code)]
 
-use anyhow::{anyhow, bail, Result};
+mod errors;
+
+use anyhow::{anyhow, bail, ensure, Error, Result};
+use errors::ConsoleError;
 use std::collections::HashMap;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::str::FromStr;
 
-const CCAPI_OK: i32 = 0;
+const CCAPI_OK: u32 = 0;
 const DEFAULT_CCAPI_PORT: u16 = 6333;
 const DEFAULT_RADIX: u32 = 16;
 
@@ -285,16 +288,15 @@ impl<'a> ConsoleRequest<'a> {
 
         if self.strict {
             let raw_status_code = lines.get(0).ok_or(anyhow!("Could not read status code"))?;
-            let status_code: i32 = raw_status_code.parse()?;
+            let status_code = u32::from_str_radix(&raw_status_code, DEFAULT_RADIX)?;
 
-            if status_code != CCAPI_OK {
-                bail!(
-                    "invalid status code '{}' received for command '{}'\nParameters: {:?}",
-                    status_code,
-                    self.command,
-                    self.parameters
-                )
-            }
+            ensure!(
+                status_code == CCAPI_OK,
+                Error::new(ConsoleError::from(status_code)).context(format!(
+                    "invalid response code '{:#4x}', parameters: {:?}",
+                    status_code, self.parameters
+                ))
+            );
         }
 
         Ok(ConsoleResponse { lines })

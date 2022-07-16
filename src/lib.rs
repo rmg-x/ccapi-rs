@@ -41,7 +41,7 @@ impl FromStr for BuzzerType {
             "double" => Ok(BuzzerType::Double),
             "triple" => Ok(BuzzerType::Triple),
             "continuous" => Ok(BuzzerType::Continuous),
-            _ => bail!("Invalid buzzer type '{s}' provided"),
+            _ => bail!("invalid buzzer type '{s}' provided"),
         }
     }
 }
@@ -139,7 +139,7 @@ impl FromStr for NotifyIcon {
             "trophy2" => Ok(NotifyIcon::Trophy2),
             "trophy3" => Ok(NotifyIcon::Trophy3),
             "trophy4" => Ok(NotifyIcon::Trophy4),
-            _ => bail!("Invalid notify icon '{s}' provided"),
+            _ => bail!("invalid notify icon '{s}' provided"),
         }
     }
 }
@@ -157,7 +157,7 @@ impl FromStr for ConsoleLed {
         match s {
             "red" => Ok(ConsoleLed::Red),
             "green" => Ok(ConsoleLed::Green),
-            _ => bail!("Invalid LED color '{s}' provided"),
+            _ => bail!("invalid LED color '{s}' provided"),
         }
     }
 }
@@ -186,7 +186,7 @@ impl FromStr for LedStatus {
             "on" => Ok(LedStatus::On),
             "off" => Ok(LedStatus::Off),
             "blink" => Ok(LedStatus::Blink),
-            _ => bail!("Invalid LED status '{s}' provided")
+            _ => bail!("invalid LED status '{s}' provided"),
         }
     }
 }
@@ -289,7 +289,7 @@ impl<'a> ConsoleRequest<'a> {
 
             if status_code != CCAPI_OK {
                 bail!(
-                    "Invalid status code '{}' received for command '{}'\nParameters: {:?}",
+                    "invalid status code '{}' received for command '{}'\nParameters: {:?}",
                     status_code,
                     self.command,
                     self.parameters

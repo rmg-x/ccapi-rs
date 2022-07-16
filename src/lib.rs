@@ -350,7 +350,7 @@ impl CCAPI {
     }
 
     /// **WARNING:** This function will return an error even if successful
-    /// 
+    ///
     /// Shutdown/restart the console, depending on the [ShutdownMode](crate::ShutdownMode) given
     ///
     /// ### Arguments
@@ -492,15 +492,12 @@ impl CCAPI {
     /// **!! NOT IMPLEMENTED !!**
     ///
     /// Read process memory from the given address
-    pub fn read_process_memory(&self, _pid: &u32, _address: &u64, _size: &u32) -> Result<Vec<u8>> {
-        // let request_url = self.build_command_url("getmemory");
-        // let address_hex = format!("{address:x}");
+    pub fn read_process_memory(&self, pid: &u32, address: &u64, size: &u32) -> Result<Vec<u8>> {
+        let _response = ConsoleRequest::new(&self.console_socket, "getmemory")
+            .param("pid", &pid.to_string())
+            .param("addr", &format!("{address:#4x}"))
+            .param("size", &size.to_string());
 
-        // let _response = ureq::get(&request_url)
-        //     .query("pid", &pid.to_string())
-        //     .query("addr", &address_hex)
-        //     .query("size", &size.to_string())
-        //     .call()?;
         unimplemented!("read_process_memory is not implemented")
     }
 }

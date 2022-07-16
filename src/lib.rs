@@ -289,9 +289,10 @@ impl<'a> ConsoleRequest<'a> {
 
             if status_code != CCAPI_OK {
                 bail!(
-                    "Invalid status code '{}' received for command '{}'",
+                    "Invalid status code '{}' received for command '{}'\nParameters: {:?}",
                     status_code,
-                    self.command
+                    self.command,
+                    self.parameters
                 )
             }
         }

@@ -41,7 +41,7 @@ pub enum ConsoleError {
     EISDIR,
     #[error("Operation cancelled")]
     ECANCELED,
-    #[error("Entry already exists(eg: An error occurred during internal memory card creation(80010014))")]
+    #[error("Entry already exists")]
     EEXIST,
     #[error("Port is already connected")]
     EISCONN,

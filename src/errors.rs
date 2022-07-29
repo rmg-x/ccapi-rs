@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-// https://wwwpsdevwikicom/ps3/Error_Codes#Generic_errors
+// https://www.psdevwiki.com/ps3/Error_Codes#Generic_errors
 #[derive(Error, Debug)]
 pub enum ConsoleError {
     #[error("The resource is temporarily unavailable")]

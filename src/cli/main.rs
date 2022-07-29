@@ -12,7 +12,6 @@ fn main() -> Result<()> {
     let mut opts = Options::new();
     opts.reqopt("i", "ip-address", "Console IPv4 address", "");
     opts.reqopt("c", "command", "Command", "");
-    opts.optflag("", "verbose", "Verbose output");
 
     let matches = opts.parse(&args[1..])?;
 

@@ -251,7 +251,6 @@ struct ConsoleRequest<'a> {
     socket: &'a SocketAddr,
     command: String,
     parameters: HashMap<String, String>,
-    strict: bool,
 }
 
 struct ConsoleResponse {
@@ -264,7 +263,6 @@ impl<'a> ConsoleRequest<'a> {
             socket,
             command: command.to_string(),
             parameters: HashMap::new(),
-            strict: true,
         }
     }
 
@@ -286,18 +284,16 @@ impl<'a> ConsoleRequest<'a> {
         let body = response.into_string()?;
         let lines: Vec<String> = body.split('\n').map(String::from).collect();
 
-        if self.strict {
-            let raw_status_code = lines.get(0).ok_or(anyhow!("Could not read status code"))?;
-            let status_code = u32::from_str_radix(&raw_status_code, DEFAULT_RADIX)?;
+        let raw_status_code = lines.get(0).ok_or(anyhow!("Could not read status code"))?;
+        let status_code = u32::from_str_radix(&raw_status_code, DEFAULT_RADIX)?;
 
-            ensure!(
-                status_code == CCAPI_OK,
-                Error::new(ConsoleError::from(status_code)).context(format!(
-                    "invalid response code '{:#4x}', parameters: {:?}",
-                    status_code, self.parameters
-                ))
-            );
-        }
+        ensure!(
+            status_code == CCAPI_OK,
+            Error::new(ConsoleError::from(status_code)).context(format!(
+                "invalid response code '{:#4x}', parameters: {:?}",
+                status_code, self.parameters
+            ))
+        );
 
         Ok(ConsoleResponse { lines })
     }

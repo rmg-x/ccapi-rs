@@ -251,10 +251,17 @@ struct ConsoleRequest<'a> {
     socket: &'a SocketAddr,
     command: String,
     parameters: HashMap<String, String>,
+    ignore_transport_error: bool,
 }
 
 struct ConsoleResponse {
     lines: Vec<String>,
+}
+
+impl Default for ConsoleResponse {
+    fn default() -> Self {
+        ConsoleResponse { lines: Vec::new() }
+    }
 }
 
 impl<'a> ConsoleRequest<'a> {
@@ -263,11 +270,17 @@ impl<'a> ConsoleRequest<'a> {
             socket,
             command: command.to_string(),
             parameters: HashMap::new(),
+            ignore_transport_error: false,
         }
     }
 
     fn param(mut self, name: &str, value: &str) -> Self {
         self.parameters.insert(name.to_string(), value.to_string());
+        self
+    }
+
+    fn ignore_transport_errors(mut self, ignore: bool) -> Self {
+        self.ignore_transport_error = ignore;
         self
     }
 
@@ -279,7 +292,15 @@ impl<'a> ConsoleRequest<'a> {
             request = request.query(&param.0, &param.1);
         }
 
-        let response = request.call()?;
+        let request_call = request.call();
+
+        let response = match self.ignore_transport_error {
+            false => request_call?,
+            true => match request_call {
+                Ok(_) | Err(ureq::Error::Transport(_)) => return Ok(ConsoleResponse::default()),
+                Err(e) => bail!(e),
+            },
+        };
 
         let body = response.into_string()?;
         let lines: Vec<String> = body.split('\n').map(String::from).collect();
@@ -347,8 +368,6 @@ impl CCAPI {
         Ok(())
     }
 
-    /// **WARNING:** This function will return an error even if successful
-    ///
     /// Shutdown/restart the console, depending on the [ShutdownMode](crate::ShutdownMode) given
     ///
     /// ### Arguments
@@ -357,9 +376,9 @@ impl CCAPI {
     pub fn shutdown(&self, shutdown_mode: ShutdownMode) -> Result<()> {
         let shutdown_code = shutdown_mode.get_value();
 
-        // FIXME: Explicitly ignore transport error for shutdown call
         let _ = ConsoleRequest::new(&self.console_socket, "shutdown")
             .param("mode", &shutdown_code.to_string())
+            .ignore_transport_errors(true)
             .send()?;
 
         Ok(())

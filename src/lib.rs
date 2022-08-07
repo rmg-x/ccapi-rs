@@ -251,7 +251,7 @@ struct ConsoleRequest<'a> {
     socket: &'a SocketAddr,
     command: String,
     parameters: HashMap<String, String>,
-    ignore_transport_error: bool,
+    ignore_transport_errors: bool,
 }
 
 struct ConsoleResponse {
@@ -270,7 +270,7 @@ impl<'a> ConsoleRequest<'a> {
             socket,
             command: command.to_string(),
             parameters: HashMap::new(),
-            ignore_transport_error: false,
+            ignore_transport_errors: false,
         }
     }
 
@@ -279,8 +279,8 @@ impl<'a> ConsoleRequest<'a> {
         self
     }
 
-    fn ignore_transport_errors(mut self, ignore: bool) -> Self {
-        self.ignore_transport_error = ignore;
+    fn ignore_transport_errors(mut self) -> Self {
+        self.ignore_transport_errors = true;
         self
     }
 
@@ -294,10 +294,11 @@ impl<'a> ConsoleRequest<'a> {
 
         let request_call = request.call();
 
-        let response = match self.ignore_transport_error {
+        let response = match self.ignore_transport_errors {
             false => request_call?,
             true => match request_call {
-                Ok(_) | Err(ureq::Error::Transport(_)) => return Ok(ConsoleResponse::default()),
+                Ok(_) => request_call?,
+                Err(ureq::Error::Transport(_)) => return Ok(ConsoleResponse::default()),
                 Err(e) => bail!(e),
             },
         };
@@ -378,7 +379,7 @@ impl CCAPI {
 
         let _ = ConsoleRequest::new(&self.console_socket, "shutdown")
             .param("mode", &shutdown_code.to_string())
-            .ignore_transport_errors(true)
+            .ignore_transport_errors()
             .send()?;
 
         Ok(())

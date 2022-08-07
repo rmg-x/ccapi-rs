@@ -241,9 +241,13 @@ pub struct FirmwareInfo {
     pub console_type: ConsoleType,
 }
 
+/// Contains all processor unit temperatures in celsius
 #[derive(Debug)]
 pub struct TemperatureInfo {
+    /// CELL (CPU) temperature (https://www.psdevwiki.com/ps3/CELL_BE)
     pub cell: i32,
+    
+    /// RSX (GPU) temperature (https://www.psdevwiki.com/ps3/RSX)
     pub rsx: i32,
 }
 

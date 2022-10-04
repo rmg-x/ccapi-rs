@@ -381,6 +381,8 @@ impl CCAPI {
     pub fn shutdown(&self, shutdown_mode: ShutdownMode) -> Result<()> {
         let shutdown_code = shutdown_mode.get_value();
 
+        // A transport error occurs when the console is shutdown,
+        // so we ignore those errors specifically.
         let _ = ConsoleRequest::new(&self.console_socket, "shutdown")
             .param("mode", &shutdown_code.to_string())
             .ignore_transport_errors()

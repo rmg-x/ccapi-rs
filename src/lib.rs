@@ -246,7 +246,7 @@ pub struct FirmwareInfo {
 pub struct TemperatureInfo {
     /// CELL (CPU) temperature (https://www.psdevwiki.com/ps3/CELL_BE)
     pub cell: i32,
-    
+
     /// RSX (GPU) temperature (https://www.psdevwiki.com/ps3/RSX)
     pub rsx: i32,
 }
@@ -301,7 +301,7 @@ impl<'a> ConsoleRequest<'a> {
         let response = match self.ignore_transport_errors {
             false => request_call?,
             true => match request_call {
-                Ok(_) => request_call?,
+                Ok(req_call) => req_call,
                 Err(ureq::Error::Transport(_)) => return Ok(ConsoleResponse::default()),
                 Err(e) => bail!(e),
             },
